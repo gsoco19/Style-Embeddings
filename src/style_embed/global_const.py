@@ -6,7 +6,7 @@ import logging
 import numpy
 import sys
 
-from global_identifiable import TRAIN_DATA_BASE, RESULTS_FOLDER
+from Style_Embeddings.src.style_embed.global_identifiable import TRAIN_DATA_BASE, RESULTS_FOLDER
 
 SEED = 1404
 BERT_CASED_BASE_MODEL = "bert-base-cased"

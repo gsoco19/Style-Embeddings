@@ -6,15 +6,15 @@ import os
 import argparse
 import logging
 
-from global_identifiable import OUTPUT_FOLDER, set_cache
-from global_const import HPC_DEV_DATASETS, HPC_TEST_DATASETS, get_complete_model_name_from_path, \
+from Style_Embeddings.src.style_embed.global_identifiable import OUTPUT_FOLDER, set_cache
+from Style_Embeddings.src.style_embed.global_const import HPC_DEV_DATASETS, HPC_TEST_DATASETS, get_complete_model_name_from_path, \
     get_results_folder, set_global_seed, set_logging
 
 set_global_seed()
 set_cache()
 sys.path.append(os.path.join('..', 'style_embed/utility'))
 # include module from utility directory
-from trained_similarities import TunedSentenceBertSimilarity
+from Style_Embeddings.src.style_embed.utility.trained_similarities import TunedSentenceBertSimilarity
 
 # this needs the STEL project, needs to be accessible for the project to include
 

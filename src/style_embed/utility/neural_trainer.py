@@ -8,7 +8,7 @@ from typing import NewType, Any
 
 import transformers
 from memory_profiler import profile
-from global_const import set_global_seed, SEED
+from Style_Embeddings.src.style_embed.global_const import set_global_seed, SEED
 
 import numpy as np
 import pandas as pd
@@ -16,13 +16,13 @@ from sentence_transformers import SentenceTransformer, util, losses, InputExampl
 from sentence_transformers.evaluation import BinaryClassificationEvaluator, TripletEvaluator
 from torch.utils.data import DataLoader
 
-from global_identifiable import STRANFORMERS_CACHE
-from global_const import SUBREDDIT_U2_COL, SUBREDDIT_U1_COL, SUBREDDIT_A_COL, CONVERSATION_U2_COL, \
+from Style_Embeddings.src.style_embed.global_identifiable import STRANFORMERS_CACHE
+from Style_Embeddings.src.style_embed.global_const import SUBREDDIT_U2_COL, SUBREDDIT_U1_COL, SUBREDDIT_A_COL, CONVERSATION_U2_COL, \
     CONVERSATION_U1_COL, CONVERSATION_A_COL, ID_U2_COL, ID_U1_COL, ID_A_COL, AUTHOR_U2_COL, AUTHOR_U1_COL, AUTHOR_A_COL
 
 import sys, os
 sys.path.append(os.path.join('', 'utility'))
-from training_const import TRIPLET_EVALUATOR, BINARY_EVALUATOR, TRIPLET_LOSS, CONTRASTIVE_ONLINE_LOSS, \
+from Style_Embeddings.src.style_embed.utility.training_const import TRIPLET_EVALUATOR, BINARY_EVALUATOR, TRIPLET_LOSS, CONTRASTIVE_ONLINE_LOSS, \
     CONTRASTIVE_LOSS, COSINE_LOSS, UNCASED_TOKENIZER, BATCH_SIZE, EVAL_BATCH_SIZE, EPOCHS, WARMUP_STEPS, LEARNING_RATE,\
     EVALUATION_STEPS, MARGIN, EPS, ROBERTA_BASE
 

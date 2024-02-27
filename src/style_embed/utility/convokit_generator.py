@@ -21,8 +21,8 @@ from typing import List
 # CONSTANTS for Reddit
 import sys
 sys.path.append(os.path.join('../../..', 'style_embed'))
-from global_identifiable import CONVO_CACHE
-from global_const import SUB_LIST, SAMPLE_YEARS, MIN_VALID_UTTS, CONVS_PER_SUB, MIN_COM_PER_CONV, SAME_AUTHOR_AU1_COL, \
+from Style_Embeddings.src.style_embed.global_identifiable import CONVO_CACHE
+from Style_Embeddings.src.style_embed.global_const import SUB_LIST, SAMPLE_YEARS, MIN_VALID_UTTS, CONVS_PER_SUB, MIN_COM_PER_CONV, SAME_AUTHOR_AU1_COL, \
     SUBREDDIT_U2_COL, SUBREDDIT_U1_COL, SUBREDDIT_A_COL, CONVERSATION_U2_COL, CONVERSATION_U1_COL, CONVERSATION_A_COL, \
     ID_U2_COL, ID_U1_COL, ID_A_COL, AUTHOR_U2_COL, AUTHOR_U1_COL, AUTHOR_A_COL, U2_COL, U1_COL, ANCHOR_COL, \
     TOPIC_SUBREDDIT, TOPIC_RANDOM, TOPIC_CONVERSATION, set_global_seed
@@ -232,7 +232,7 @@ class TaskGenerator:
     """
 
     def __init__(self, convokit_data_keys: List[str] = SUB_LIST, years: List[int] = SAMPLE_YEARS, directory=CONVO_CACHE,
-                 min_valid_utts=MIN_VALID_UTTS, total=TOTAL, print_stats=True, convo_per_sub=CONVS_PER_SUB,
+                 min_valid_utts=MIN_VALID_UTTS, total=TOTAL, print_stats=True, convo_per_sub=CONVS_PER_SUB, custom_corpus=None,
                  author_data_f: str=None):
         """
 
@@ -250,10 +250,13 @@ class TaskGenerator:
         #    # TODO: memory error when assigning to corpus?
         #    self.corpus = Corpus(download("subreddit-" + subreddit, data_dir=directory))
         # else:
-        self.convokit_keys = convokit_data_keys
-        self.corpus = ConvokitStream(
-            self.convokit_keys, years=years, convo_per_sub=convo_per_sub,
-            directory=directory).get_corpus()  # Corpus(download(self.convokit_key, data_dir=directory))
+        if custom_corpus:
+            self.corpus = custom_corpus
+        else:
+            self.convokit_keys = convokit_data_keys
+            self.corpus = ConvokitStream(
+                self.convokit_keys, years=years, convo_per_sub=convo_per_sub,
+                directory=directory).get_corpus()  # Corpus(download(self.convokit_key, data_dir=directory))
         if print_stats:
             self.corpus.print_summary_stats()
         self.min_valid_utts = min_valid_utts
@@ -374,8 +377,11 @@ class TaskGenerator:
                         author_data_fname: str = 'author_data.json'):
         assert topic_variable in [TOPIC_CONVERSATION, TOPIC_RANDOM, TOPIC_SUBREDDIT]
 
-        file_end = "_subreddits-{}_year-{}-{}_tasks-{}_topic_variable-{}.tsv" \
-            .format(len(self.convokit_keys), years[0], years[-1], self.nbr_triples_to_extract, topic_variable)
+        # file_end = "_subreddits-{}_year-{}-{}_tasks-{}_topic_variable-{}.tsv" \
+        #     .format(len(self.convokit_keys), years[0], years[-1], self.nbr_triples_to_extract, topic_variable)
+        # make a new file end bc this is sad time
+        file_end = "_daigt-{}_year-{}-{}_tasks-{}_topic_variable-{}.tsv" \
+            .format(len(len(self.corpus.utterances)), self.nbr_triples_to_extract, topic_variable)
         train_filename = output_dir + "/train-{}_{}".format(len(self.train_data), file_end)
         logging.info('Saving train data file to {}'.format(train_filename))
         self.train_data.to_csv(train_filename, sep="\t")
@@ -477,6 +483,9 @@ class TaskGenerator:
                 task_dict[key].append(value)
         task_data = pd.DataFrame.from_dict(task_dict)
         assert(len(task_data) == len(task_dict[SAME_AUTHOR_AU1_COL]))
+        print(task_authors)
+        print(task_data)
+        print(task_superset)
         self.print_summary(task_data, task_authors, task_superset)
         return task_data
 

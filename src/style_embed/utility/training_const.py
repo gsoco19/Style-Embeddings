@@ -1,5 +1,5 @@
 from transformers import BertTokenizer
-from global_const import set_torch_device
+from Style_Embeddings.src.style_embed.global_const import set_torch_device
 
 # binary vs. constrastive AV task
 TRIPLET_EVALUATOR = "triplet"
