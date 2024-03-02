@@ -267,7 +267,10 @@ class TaskGenerator:
         self.dev_ratio = DEV_RATIO
         self.test_ratio = TEST_RATIO
         if not author_data_f:
-            self._init_authors()  # set self.train_authors, self.train_superset, ...
+            if custom_corpus:
+                self._init_authors(ai=True)  # set self.train_authors, self.train_superset, ...
+            else:
+                self._init_authors()
         else:
             self.load_authors_set_from_json(os.path.dirname(author_data_f), os.path.basename(author_data_f))
         self.train_data = None
@@ -325,7 +328,7 @@ class TaskGenerator:
         logging.info("  adapted size first test authors {}".format(len(self.test_authors)))
         return self.train_data, self.dev_data, self.test_data
 
-    def _init_authors(self):
+    def _init_authors(self, ai=False):
         """
             split into non-overlapping train, dev and test author set
                 via a superset and a first author set per split,
@@ -340,7 +343,7 @@ class TaskGenerator:
         assert (self.train_ratio + self.test_ratio + self.dev_ratio == 1)
 
         # set train, dev, test SUPERSET (authors with at least one (valid) utterance, i.e., not in SKIP_COMMENTS)
-        self._set_supersets()
+        self._set_supersets(ai)
 
         # Pre-select FIRST AUTHORS (from which the anchors will later be sampled)
         self._preset_firstauthors()
@@ -380,8 +383,8 @@ class TaskGenerator:
         # file_end = "_subreddits-{}_year-{}-{}_tasks-{}_topic_variable-{}.tsv" \
         #     .format(len(self.convokit_keys), years[0], years[-1], self.nbr_triples_to_extract, topic_variable)
         # make a new file end bc this is sad time
-        file_end = "_daigt-{}_year-{}-{}_tasks-{}_topic_variable-{}.tsv" \
-            .format(len(len(self.corpus.utterances)), self.nbr_triples_to_extract, topic_variable)
+        file_end = "_hc3-{}_tasks-{}_topic_variable-{}.tsv" \
+            .format(len(self.corpus.utterances), self.nbr_triples_to_extract, topic_variable)
         train_filename = output_dir + "/train-{}_{}".format(len(self.train_data), file_end)
         logging.info('Saving train data file to {}'.format(train_filename))
         self.train_data.to_csv(train_filename, sep="\t")
@@ -425,10 +428,14 @@ class TaskGenerator:
         if base_task_df is not None:
             assert task_total == len(base_task_df)
         logging.info('Generating {} Tasks'.format(task_total))
+        # task_dict = {ANCHOR_COL: [], U1_COL: [], U2_COL: [], ID_A_COL: [], ID_U1_COL: [], ID_U2_COL: [],
+        #              AUTHOR_A_COL: [], AUTHOR_U1_COL: [], AUTHOR_U2_COL: [], CONVERSATION_A_COL: [],
+        #              CONVERSATION_U1_COL: [], CONVERSATION_U2_COL: [], SUBREDDIT_A_COL: [], SUBREDDIT_U1_COL: [],
+        #              SUBREDDIT_U2_COL: [], SAME_AUTHOR_AU1_COL: []}
+        # get rid of subreddit-specific stuff
         task_dict = {ANCHOR_COL: [], U1_COL: [], U2_COL: [], ID_A_COL: [], ID_U1_COL: [], ID_U2_COL: [],
-                     AUTHOR_A_COL: [], AUTHOR_U1_COL: [], AUTHOR_U2_COL: [], CONVERSATION_A_COL: [],
-                     CONVERSATION_U1_COL: [], CONVERSATION_U2_COL: [], SUBREDDIT_A_COL: [], SUBREDDIT_U1_COL: [],
-                     SUBREDDIT_U2_COL: [], SAME_AUTHOR_AU1_COL: []}
+                AUTHOR_A_COL: [], AUTHOR_U1_COL: [], AUTHOR_U2_COL: [], CONVERSATION_A_COL: [],
+                CONVERSATION_U1_COL: [], CONVERSATION_U2_COL: [], SAME_AUTHOR_AU1_COL: []}
         del_authors = 0
         for i in range(
                 task_total):
@@ -475,17 +482,14 @@ class TaskGenerator:
                            CONVERSATION_A_COL: a.conversation_id,
                            CONVERSATION_U1_COL: u_order[0].conversation_id,
                            CONVERSATION_U2_COL: u_order[1].conversation_id,
-                           SUBREDDIT_A_COL: a.get_conversation().meta['subreddit'],
-                           SUBREDDIT_U1_COL: u_order[0].get_conversation().meta['subreddit'],
-                           SUBREDDIT_U2_COL: u_order[1].get_conversation().meta['subreddit'],
+                        #    SUBREDDIT_A_COL: a.get_conversation().meta['subreddit'],
+                        #    SUBREDDIT_U1_COL: u_order[0].get_conversation().meta['subreddit'],
+                        #    SUBREDDIT_U2_COL: u_order[1].get_conversation().meta['subreddit'],
                            SAME_AUTHOR_AU1_COL: label}
             for key, value in update_dict.items():
                 task_dict[key].append(value)
         task_data = pd.DataFrame.from_dict(task_dict)
         assert(len(task_data) == len(task_dict[SAME_AUTHOR_AU1_COL]))
-        print(task_authors)
-        print(task_data)
-        print(task_superset)
         self.print_summary(task_data, task_authors, task_superset)
         return task_data
 
@@ -544,24 +548,24 @@ class TaskGenerator:
                                 ])
         logging.info('  Share of DA utterances, where utterance was written by a subset author: {0}={1}/{2}'
                      .format(nbr_da_subset / len(task_data), nbr_da_subset, len(task_data)))
-        nbr_same_sub = len(task_data[
-                                (task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U1_COL])
-                                & (task_data[SAME_AUTHOR_AU1_COL] == 1)
-                                ]) + \
-                        len(task_data[
-                                (task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U2_COL])
-                                & (task_data[SAME_AUTHOR_AU1_COL] == 0)
-                                ])
-        logging.info('  Share of tasks, where same author utterances came from the same subreddit: {}={}/{}'
-                     .format(nbr_same_sub/len(task_data), nbr_same_sub, len(task_data)))
-        nbr_distinct_same_sub = len(task_data[
-                                        ((task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U1_COL]) &
-                                         (task_data[SAME_AUTHOR_AU1_COL] == 0)) |
-                                        ((task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U2_COL]) &
-                                         (task_data[SAME_AUTHOR_AU1_COL] == 1))
-                                        ])
-        logging.info('  Share of tasks, where distinct author utterances came from the same subreddit: {}={}/{}'
-                     .format(nbr_distinct_same_sub/len(task_data), nbr_distinct_same_sub, len(task_data)))
+        # nbr_same_sub = len(task_data[
+        #                         (task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U1_COL])
+        #                         & (task_data[SAME_AUTHOR_AU1_COL] == 1)
+        #                         ]) + \
+        #                 len(task_data[
+        #                         (task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U2_COL])
+        #                         & (task_data[SAME_AUTHOR_AU1_COL] == 0)
+        #                         ])
+        # logging.info('  Share of tasks, where same author utterances came from the same subreddit: {}={}/{}'
+        #              .format(nbr_same_sub/len(task_data), nbr_same_sub, len(task_data)))
+        # nbr_distinct_same_sub = len(task_data[
+        #                                 ((task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U1_COL]) &
+        #                                  (task_data[SAME_AUTHOR_AU1_COL] == 0)) |
+        #                                 ((task_data[SUBREDDIT_A_COL] == task_data[SUBREDDIT_U2_COL]) &
+        #                                  (task_data[SAME_AUTHOR_AU1_COL] == 1))
+        #                                 ])
+        # logging.info('  Share of tasks, where distinct author utterances came from the same subreddit: {}={}/{}'
+        #              .format(nbr_distinct_same_sub/len(task_data), nbr_distinct_same_sub, len(task_data)))
 
     def random_utterance_quartet(self, first_authors, superset_authors, topic_variable=TOPIC_CONVERSATION,
                                  a_id=None, sa_id=None):
@@ -751,7 +755,7 @@ class TaskGenerator:
                             self.min_valid_utts + max(1, round(0.1 * self.min_valid_utts))]
         logging.info("  {} possible dev_author candidates remain.".format(len(self.dev_authors)))
 
-    def _set_supersets(self):
+    def _set_supersets(self, ai=False):
         superset_authors = [speaker.id
                             for speaker in self.corpus.iter_speakers(
                 lambda s: len(
@@ -759,17 +763,58 @@ class TaskGenerator:
                         lambda u: TaskGenerator.is_valid(u.text))
                 ) > 0
             )]
+        
+        # For finetuning on AI
+        if ai:
+            # Split by AI authors (primary authors) first, randomly
+            ai_authors = [s for s in superset_authors if "ai" in s]
+            num_ai = len(ai_authors)
+            random.shuffle(ai_authors)
+            train_first_authors = ai_authors[:num_ai // 3]
+            dev_first_authors = ai_authors[num_ai // 3: (2 * num_ai) // 3]
+            test_first_authors = ai_authors[(2 * num_ai) // 3:]
+            
+            # Get all the speakers in conversation with the primary authors to put into each superset
+            train_set, dev_set, test_set = set(), set(), set()
+   
+            for convo_id in self.corpus.conversations.keys():
+                conversation = self.corpus.get_conversation(convo_id)
+                speaker_ids = conversation.get_speaker_ids()
+                for author in train_first_authors:
+                    if author in speaker_ids:
+                        train_set.update(speaker_ids)
+                        break
+                for author in dev_first_authors:
+                    if author in speaker_ids:
+                        dev_set.update(speaker_ids)
+                        break
+                for author in test_first_authors:
+                    if author in speaker_ids:
+                        test_set.update(speaker_ids)
+                        break
+            
+            # Convert to list and shuffle
+            self.train_superset = list(train_set)
+            self.dev_superset = list(dev_set)
+            self.test_superset = list(test_set)
+            random.shuffle(self.train_superset)
+            random.shuffle(self.dev_superset)
+            random.shuffle(self.test_superset)
+
+        else:
         #   SPLIT superset 70 - 15 - 15 and shuffle dataset during splitting
-        self.train_superset, self.test_superset = sklearn.model_selection.train_test_split(superset_authors,
-                                                                                           train_size=self.train_ratio,
-                                                                                           shuffle=True)
-        tmp_train_size = self.dev_ratio / (1 - self.train_ratio)
-        self.dev_superset, self.test_superset = sklearn.model_selection.train_test_split(self.test_superset,
-                                                                                         train_size=tmp_train_size,
-                                                                                         shuffle=True)
+            self.train_superset, self.test_superset = sklearn.model_selection.train_test_split(superset_authors,
+                                                                                            train_size=self.train_ratio,
+                                                                                            shuffle=True)
+            tmp_train_size = self.dev_ratio / (1 - self.train_ratio)
+            self.dev_superset, self.test_superset = sklearn.model_selection.train_test_split(self.test_superset,
+                                                                                            train_size=tmp_train_size,
+                                                                                            shuffle=True)
+
         del superset_authors
         logging.info(" TRAIN ratio at " + str(self.train_ratio) + " TEST ratio at " + str(self.test_ratio)
                      + " DEV ratio at " + str(self.dev_ratio))
+        
 
     # NOT USED --> changed min_valid_utts to mean at least these number of non-empty utterances
     @staticmethod

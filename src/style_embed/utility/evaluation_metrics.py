@@ -10,9 +10,9 @@ import sklearn
 
 import pandas as pd
 
-from global_identifiable import OUTPUT_FOLDER
-from global_const import generate_file_prefix, SAME_AUTHOR_AU1_COL, U2_COL, U1_COL, ANCHOR_COL, set_logging
-from plot import plot_sim_values
+from Style_Embeddings.src.style_embed.global_identifiable import OUTPUT_FOLDER
+from Style_Embeddings.src.style_embed.global_const import generate_file_prefix, SAME_AUTHOR_AU1_COL, U2_COL, U1_COL, ANCHOR_COL, set_logging
+from Style_Embeddings.src.style_embed.utility.plot import plot_sim_values
 set_logging()
 
 

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-import plot_utility
+from Style_Embeddings.src.style_embed.utility import plot_utility
 plot_utility.init_plot()
 from matplotlib import pyplot as plt
 

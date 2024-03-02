@@ -225,7 +225,7 @@ class SentenceBertFineTuner:
         :param as_float: whether label should be saved as float ... (necessary for cosine loss)
         :return:
         """
-        from convokit_generator import ANCHOR_COL, U1_COL, U2_COL, SAME_AUTHOR_AU1_COL
+        from Style_Embeddings.src.style_embed.utility.convokit_generator import ANCHOR_COL, U1_COL, U2_COL, SAME_AUTHOR_AU1_COL
         train_examples = []
         task_data = pd.read_csv(task_filename, sep='\t',
                                 dtype={ANCHOR_COL: str, U1_COL: str, U2_COL: str,

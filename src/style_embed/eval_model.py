@@ -53,7 +53,7 @@ def _evaluate_model(model, model_path, test_files, test_stel, test_AV):
         # test on dev set
         logging.info("testing model on AV task ... ")
         logging.info(" ... testing on files {}".format(test_files))
-        from evaluation_metrics import triple_test_sim_function
+        from Style_Embeddings.src.style_embed.utility.evaluation_metrics import triple_test_sim_function
         for test_file in test_files:
             logging.info("testing on {} ...".format(test_file))
             triple_test_sim_function(similarity_function_callable=model.similarities,
