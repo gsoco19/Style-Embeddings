@@ -1,3 +1,0 @@
-	TT predictions	TT true	AV predictions	AV true	AV sims	AV opt thresh	AV fixed thresh	AV fixed predictions
-0	1	0	0	1	0.9585685729980469	inf	0.2	1
-1	1	0	0	0	0.980850100517273	inf	0.2	1

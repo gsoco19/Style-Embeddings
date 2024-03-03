@@ -354,6 +354,7 @@ class TaskGenerator:
         #       which is the limiting factor in triplet generation (superset_first_author is way bigger)
         max_total = (len(self.train_authors) + len(self.test_authors) + len(self.dev_authors)) * \
                     math.comb(self.min_valid_utts, 2)  # before: (self.min_valid_utts - 1)
+        print("Max total:", max_total)
         logging.info('Maximum possible Tasks: {}'.format(max_total))
 
         if not self.nbr_triples_to_extract or self.nbr_triples_to_extract > max_total:
@@ -375,6 +376,7 @@ class TaskGenerator:
         assert (not set(self.test_superset) & set(self.train_superset))
         assert (not set(self.test_superset) & set(self.dev_superset))
         assert (set(self.test_authors) & set(self.test_superset) == set(self.test_authors))
+        print("Length of train, dev, test first authors:", len(self.train_authors), len(self.dev_authors), len(self.test_authors))
 
     def save_data_split(self, output_dir="", topic_variable: str = TOPIC_CONVERSATION, years: List[int] = SAMPLE_YEARS,
                         author_data_fname: str = 'author_data.json'):
@@ -764,39 +766,24 @@ class TaskGenerator:
                 ) > 0
             )]
         
-        # For finetuning on AI
+        # For finetuning on human vs AI datasets
         if ai:
-            # Split by AI authors (primary authors) first, randomly
-            ai_authors = [s for s in superset_authors if "ai" in s]
-            num_ai = len(ai_authors)
-            random.shuffle(ai_authors)
-            train_first_authors = ai_authors[:num_ai // 3]
-            dev_first_authors = ai_authors[num_ai // 3: (2 * num_ai) // 3]
-            test_first_authors = ai_authors[(2 * num_ai) // 3:]
-            
-            # Get all the speakers in conversation with the primary authors to put into each superset
-            train_set, dev_set, test_set = set(), set(), set()
-   
-            for convo_id in self.corpus.conversations.keys():
-                conversation = self.corpus.get_conversation(convo_id)
-                speaker_ids = conversation.get_speaker_ids()
-                for author in train_first_authors:
-                    if author in speaker_ids:
-                        train_set.update(speaker_ids)
-                        break
-                for author in dev_first_authors:
-                    if author in speaker_ids:
-                        dev_set.update(speaker_ids)
-                        break
-                for author in test_first_authors:
-                    if author in speaker_ids:
-                        test_set.update(speaker_ids)
-                        break
-            
-            # Convert to list and shuffle
-            self.train_superset = list(train_set)
-            self.dev_superset = list(dev_set)
-            self.test_superset = list(test_set)
+            # We assume here that the train-validation-test split has already been chosen,
+            # denoted by a string indicating the split in the metadata.
+            self.train_superset = []
+            self.dev_superset = []
+            self.test_superset = []
+            for speaker_id in superset_authors:
+                speaker = self.corpus.get_speaker(speaker_id)
+                split = speaker.meta.get("split")
+                if "train" in split:
+                    self.train_superset.append(speaker_id)
+                elif "val" in split:
+                    self.dev_superset.append(speaker_id)
+                else:
+                    self.test_superset.append(speaker_id)
+
+            # Shuffle order randomly within each set
             random.shuffle(self.train_superset)
             random.shuffle(self.dev_superset)
             random.shuffle(self.test_superset)
