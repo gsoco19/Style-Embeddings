@@ -120,8 +120,16 @@ def set_logging():
     :return:
     """
     import logging
-    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO,
-                        stream=sys.stdout)
+    # logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO,
+    #                     stream=sys.stdout, filename='finetune.log')
+    logging.basicConfig(
+    level=logging.DEBUG,  # Set the logging level
+    format='%(asctime)s - %(levelname)s - %(message)s',  # Define log message format
+    handlers=[
+        logging.FileHandler('finetuned_models/finetune.log'),
+        logging.StreamHandler()  # Log to the console
+    ]
+)
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 

@@ -131,6 +131,7 @@ class SentenceBertFineTuner:
                                       batch_size=batch_size)  # ,
         # pin_memory=True)  # ,
         # num_workers=4)  # collate_fn=self.model.smart_batching_collate)
+        print("converted to dataloader")
 
         if debug_dataloader:
             train_dataloader.collate_fn = self.model.smart_batching_collate
@@ -171,7 +172,7 @@ class SentenceBertFineTuner:
         #   see https://stackoverflow.com/questions/62691279/how-to-disable-tokenizers-parallelism-true-false-warning/72926996#72926996
         #   might be possible to avoid with using a different dataloader approach
         #   this should NOT change the result but "just" slow down training
-
+        print("fitting model")
         self.model.fit(train_objectives=[(train_dataloader, train_loss)],
                        evaluator=evaluator,
                        epochs=epochs,
