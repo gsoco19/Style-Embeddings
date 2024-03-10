@@ -1,0 +1,3 @@
+[submodule "Style_Embeddings"]
+	path = Style_Embeddings
+	url = git@github.com:gsoco19/Style_Embeddings.git
